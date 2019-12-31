@@ -1,11 +1,16 @@
 package main
 
 import (
+	"errors"
+	"time"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider/cognitoidentityprovideriface"
-	"time"
+)
+
+var (
+	//ErrorInvalidMissingCredentials ...
+	ErrorInvalidMissingCredentials = errors.New("Missing username or password")
 )
 
 //CognitoParam ...
@@ -17,20 +22,22 @@ type CognitoParam struct {
 }
 
 //NewCognitoParam ...
-func NewCognitoParam(region, appClientID, userPoolID string, logger ILogger) *CognitoParam {
-
-	mySession := session.Must(session.NewSession())
-	cognito := &CognitoParam{
+func NewCognitoParam(region, appClientID, userPoolID string, client cognitoidentityprovideriface.CognitoIdentityProviderAPI, logger ILogger) *CognitoParam {
+	return &CognitoParam{
 		appClientID: aws.String(appClientID),
 		userPoolID:  aws.String(userPoolID),
-		client:      cognitoidentityprovider.New(mySession, aws.NewConfig().WithRegion(region)),
+		client:      client,
 		logger:      logger,
 	}
-	return cognito
 }
 
 //GetTokens ...
 func (c *CognitoParam) GetTokens(username, password *string) (accessToken, refreshToken *string, err error) {
+
+	if username == nil || password == nil {
+		err = ErrorInvalidMissingCredentials
+		return
+	}
 
 	c.logger.Logln("Getting access token")
 	params := &cognitoidentityprovider.InitiateAuthInput{

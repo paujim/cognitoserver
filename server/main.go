@@ -1,10 +1,12 @@
 package main
 
 import (
-	"path"
-
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
+	"path"
 )
 
 var (
@@ -20,7 +22,7 @@ func init() {
 	paramStore = NewParamStore(region, logger)
 	userPoolID, _ = paramStore.Get("/pj/userpool/id")
 	appClientID, _ = paramStore.Get("/pj/userpool/appclient/id")
-	cognito = NewCognitoParam(region, appClientID, userPoolID, logger)
+	cognito = NewCognitoParam(region, appClientID, userPoolID, cognitoidentityprovider.New(session.Must(session.NewSession()), aws.NewConfig().WithRegion(region)), logger)
 }
 
 func main() {
