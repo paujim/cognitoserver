@@ -2,10 +2,10 @@ package main
 
 import (
 	"errors"
-	"time"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider/cognitoidentityprovideriface"
+	"time"
 )
 
 var (
@@ -55,12 +55,18 @@ func (c *CognitoParam) GetTokens(username, password *string) (accessToken, refre
 	}
 	c.logger.Logln("\n" + resp.GoString())
 
-	if resp.ChallengeName != nil && *resp.ChallengeName == "NEW_PASSWORD_REQUIRED" {
+	// Ok
+	if resp.ChallengeName == nil {
+		accessToken = resp.AuthenticationResult.AccessToken
+		refreshToken = resp.AuthenticationResult.RefreshToken
+		return
+	}
+	// NEW_PASSWORD_REQUIRED Challenge
+	if *resp.ChallengeName == "NEW_PASSWORD_REQUIRED" {
 		return c.ResponseToNewPassword(resp.Session, username, password)
 	}
-
-	accessToken = resp.AuthenticationResult.AccessToken
-	refreshToken = resp.AuthenticationResult.RefreshToken
+	// Others
+	err = errors.New("Unable to respond: " + *resp.ChallengeName)
 	return
 }
 

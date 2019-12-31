@@ -77,7 +77,7 @@ func TestGetTokens(t *testing.T) {
 			t.Errorf("The refresh token does not match the expected value")
 		}
 	})
-	t.Run("Test successfull challenge", func(t *testing.T) {
+	t.Run("Test OTHER challenge", func(t *testing.T) {
 		cp := NewCognitoParam(
 			"region",
 			"client",
@@ -88,7 +88,23 @@ func TestGetTokens(t *testing.T) {
 					ChallengeName:        aws.String("OTHER"),
 					AuthenticationResult: authResult,
 				},
-				respondToAuthChallengeOutput: &cognitoidentityprovider.RespondToAuthChallengeOutput{
+			},
+			logger,
+		)
+		_, _, err := cp.GetTokens(aws.String("username"), aws.String("password"))
+
+		if err != nil {
+			t.Errorf(err.Error())
+		}
+	})
+	t.Run("Test successfull challenge", func(t *testing.T) {
+		cp := NewCognitoParam(
+			"region",
+			"client",
+			"userpool",
+			&mockedCognitoClient{
+				request: &request.Request{},
+				initiateAuthOutput: &cognitoidentityprovider.InitiateAuthOutput{
 					AuthenticationResult: authResult,
 				},
 			},
@@ -108,8 +124,7 @@ func TestGetTokens(t *testing.T) {
 			t.Errorf("The refresh token does not match the expected value")
 		}
 	})
-	t.Run("Test error on challenge", func(t *testing.T) {
-
+	t.Run("Test error on request", func(t *testing.T) {
 		expectedError := errors.New("Something went wrong")
 		cp := NewCognitoParam(
 			"region",
@@ -126,6 +141,5 @@ func TestGetTokens(t *testing.T) {
 		if err != expectedError {
 			t.Errorf("Expected error")
 		}
-
 	})
 }
