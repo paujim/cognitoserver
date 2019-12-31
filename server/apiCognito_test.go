@@ -93,8 +93,8 @@ func TestGetTokens(t *testing.T) {
 		)
 		_, _, err := cp.GetTokens(aws.String("username"), aws.String("password"))
 
-		if err != nil {
-			t.Errorf(err.Error())
+		if err == nil {
+			t.Errorf("Error expected")
 		}
 	})
 	t.Run("Test successfull challenge", func(t *testing.T) {

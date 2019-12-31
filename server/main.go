@@ -19,13 +19,14 @@ var (
 )
 
 func init() {
+}
+
+func main() {
+
 	paramStore = NewParamStore(region, logger)
 	userPoolID, _ = paramStore.Get("/pj/userpool/id")
 	appClientID, _ = paramStore.Get("/pj/userpool/appclient/id")
 	cognito = NewCognitoParam(region, appClientID, userPoolID, cognitoidentityprovider.New(session.Must(session.NewSession()), aws.NewConfig().WithRegion(region)), logger)
-}
-
-func main() {
 
 	// Set the router as the default one shipped with Gin
 	router := gin.Default()
