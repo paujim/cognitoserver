@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	//ErrorInvalidMissingCredentials ...
-	ErrorInvalidMissingCredentials = errors.New("Missing username or password")
+	//ErrorInvalidInputParameters ...
+	ErrorInvalidInputParameters = errors.New("Missing input parameters")
 )
 
 //CognitoParam ...
@@ -35,7 +35,7 @@ func NewCognitoParam(region, appClientID, userPoolID string, client cognitoident
 func (c *CognitoParam) GetTokens(username, password *string) (accessToken, refreshToken *string, err error) {
 
 	if username == nil || password == nil {
-		err = ErrorInvalidMissingCredentials
+		err = ErrorInvalidInputParameters
 		return
 	}
 
@@ -63,15 +63,14 @@ func (c *CognitoParam) GetTokens(username, password *string) (accessToken, refre
 	}
 	// NEW_PASSWORD_REQUIRED Challenge
 	if *resp.ChallengeName == "NEW_PASSWORD_REQUIRED" {
-		return c.ResponseToNewPassword(resp.Session, username, password)
+		return responseToNewPassword(c, resp.Session, username, password)
 	}
 	// Others
 	err = errors.New("Unable to respond: " + *resp.ChallengeName)
 	return
 }
 
-//ResponseToNewPassword ...
-func (c *CognitoParam) ResponseToNewPassword(session, username, password *string) (accessToken, refreshToken *string, err error) {
+func responseToNewPassword(c *CognitoParam, session, username, password *string) (accessToken, refreshToken *string, err error) {
 	c.logger.Logln("New password required. Responding chanllenge with old password")
 	params := &cognitoidentityprovider.RespondToAuthChallengeInput{
 		Session:       session,
@@ -88,6 +87,11 @@ func (c *CognitoParam) ResponseToNewPassword(session, username, password *string
 		return
 	}
 
+	if resp.AuthenticationResult == nil {
+		err = errors.New("Unable to get AccessToken")
+		return
+	}
+
 	c.logger.Logln("\n" + resp.GoString())
 	accessToken = resp.AuthenticationResult.AccessToken
 	refreshToken = resp.AuthenticationResult.RefreshToken
@@ -96,6 +100,11 @@ func (c *CognitoParam) ResponseToNewPassword(session, username, password *string
 
 //RefreshAccessToken ...
 func (c *CognitoParam) RefreshAccessToken(token *string) (accessToken, refreshToken *string, err error) {
+
+	if token == nil {
+		err = ErrorInvalidInputParameters
+		return
+	}
 
 	c.logger.Logln("Refreshing token")
 	params := &cognitoidentityprovider.InitiateAuthInput{
@@ -111,7 +120,10 @@ func (c *CognitoParam) RefreshAccessToken(token *string) (accessToken, refreshTo
 		return
 	}
 	c.logger.Logln("\n" + resp.GoString())
-
+	if resp.AuthenticationResult == nil {
+		err = errors.New("Unable to get AccessToken")
+		return
+	}
 	accessToken = resp.AuthenticationResult.AccessToken
 	refreshToken = token
 	return
