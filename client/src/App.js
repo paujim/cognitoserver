@@ -9,26 +9,24 @@ import { USER_API } from './api-config';
 function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
-      {USER_API.Url}{' Copyright © '}
-      <Link color="inherit" href="https://material-ui.com/">
-        Your Website
+      {' Copyright © '}
+      {new Date().getFullYear()}{' '}
+      <Link color="inherit" href={USER_API.Url}>
+        {USER_API.Url}
       </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-      
     </Typography>
   );
 }
 
 export default function App() {
   return (
-  <div> 
-    <NavBar>
-    </NavBar> 
-    <Container>
-      <UserTable/>
-    </Container>
-    <Copyright/>
-  </div>
+    <div>
+      <NavBar>
+      </NavBar>
+      <Container>
+        <UserTable />
+      </Container>
+      <Copyright />
+    </div>
   );
 }

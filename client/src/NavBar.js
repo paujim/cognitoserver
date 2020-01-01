@@ -29,7 +29,7 @@ export default function ButtonAppBar() {
     <div className={classes.root}>
       <AppBar position="static">
         <Toolbar>
-          <SecurityRoundedIcon/>
+          <SecurityRoundedIcon />
           <Typography variant="h6" className={classes.title}>
             Admin
           </Typography>
