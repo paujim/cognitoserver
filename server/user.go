@@ -33,7 +33,6 @@ func registerUser(c *gin.Context) {
 }
 
 func listUsers(c *gin.Context) {
-
 	users, err := cognito.ListUsers()
 	if err == nil {
 		c.JSON(http.StatusAccepted, users)
