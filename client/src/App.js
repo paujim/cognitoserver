@@ -20,18 +20,6 @@ function Copyright() {
   );
 }
 
-const users = [
-  createData('Frozenyoghurt', '2019-12-12 07:40:33', 'CONFIRMED', true),
-  createData('Ssandwich', '2019-12-12 07:40:33', 'CONFIRMED', true),
-  createData('Eclair', '2019-12-12 07:40:33', 'CONFIRMED', true),
-  createData('Cupcake', '2019-12-12 07:40:33', 'CONFIRMED', false),
-  createData('Gingerbread', '2019-12-12 07:40:33', 'UNCONFIRMED', true),
-];
-function createData(username, created, status, enabled) {
-  return { username, created, status, enabled };
-}
-
-
 export default function App() {
   return (
   <div> 
