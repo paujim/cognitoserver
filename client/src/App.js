@@ -4,15 +4,15 @@ import Typography from '@material-ui/core/Typography';
 import Link from '@material-ui/core/Link';
 import NavBar from './NavBar';
 import UserTable from './UserTable'
-import { USER_API } from './api-config';
+import { API } from './Api';
 
 function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
       {' Copyright © '}
       {new Date().getFullYear()}{' '}
-      <Link color="inherit" href={USER_API.Url}>
-        {USER_API.Url}
+      <Link color="inherit" href={API.Url}>
+        {API.Url}
       </Link>{' '}
     </Typography>
   );

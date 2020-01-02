@@ -4,16 +4,20 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from
 import Switch from '@material-ui/core/Switch';
 import { IconButton, Button } from '@material-ui/core/';
 import AddIcon from '@material-ui/icons/Add';
+import CloseIcon from '@material-ui/icons/Close';
 import { Card, CardContent, CardActions } from '@material-ui/core/';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core/';
-import { USER_API } from './api-config';
+import { API } from './Api';
 import Snackbar from '@material-ui/core/Snackbar';
+import UseFetch from './UseFetch'
+
 
 const useStyles = makeStyles(theme => ({
   circular: {
     position: 'absolute',
     right: '50%',
+    top: '155px',
     display: 'flex',
     '& > * + *': {
       marginLeft: theme.spacing(2),
@@ -46,37 +50,27 @@ export default function UserTable() {
     setOpenDialog(false);
   };
 
+  const dataHandler = (data) => {
+    console.log(data)
+    setData(data)
+    setHasFailed(false)
+  }
+
+  const errorHandler = (error) => {
+    console.log(error)
+    setData([])
+    setHasFailed(true)
+  }
+
   const [data, setData] = React.useState([]);
-  const [isPending, setIsPending] = React.useState(false);
-  const [isError, setIsError] = React.useState(false);
+  const isPending = UseFetch(API.FetchListUsers, dataHandler, errorHandler)
+  const [hasFailed, setHasFailed] = React.useState(false);
   const handleClose = (event, reason) => {
     if (reason === 'clickaway') {
       return;
     }
-    setIsError(false);
+    setHasFailed(false);
   };
-
-  React.useEffect(() => {
-    const fetchData = async () => {
-      const response = await USER_API.ListUsers()
-      console.log(response)
-      let data = await response.json()
-      console.log(data)
-      setIsPending(false)
-      if (!response.ok) {
-        data = []
-        setIsError(true)
-      }
-      setData(data);
-    };
-    setIsPending(true)
-    fetchData().catch(error => {
-      console.log(error)
-      setIsPending(false)
-      setIsError(true)
-      setData([]);
-    })
-  }, []);
 
   let progress = isPending ? <div className={classes.circular}><CircularProgress /></div> : <div></div>;
 
@@ -84,6 +78,7 @@ export default function UserTable() {
     <Card>
       <CardContent>
         <TableContainer>
+          {progress}
           <Table className={classes.table} aria-label="user table">
             <TableHead>
               <TableRow>
@@ -94,7 +89,6 @@ export default function UserTable() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {progress}
               {data.map(row => (
                 <TableRow key={row.username}>
                   <TableCell component="th" scope="row">{row.username}</TableCell>
@@ -133,11 +127,22 @@ export default function UserTable() {
       </Dialog>
       <Snackbar
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        open={isError}
+        open={hasFailed}
         autoHideDuration={6000}
         onClose={handleClose}
         ContentProps={{ 'aria-describedby': 'message-id' }}
         message={<span id="message-id">Error Fetching data</span>}
+        action={[
+          <IconButton
+            key="close"
+            aria-label="close"
+            color="inherit"
+            className={classes.close}
+            onClick={handleClose}
+          >
+            <CloseIcon />
+          </IconButton>,
+        ]}
       >
       </Snackbar>
     </Card>

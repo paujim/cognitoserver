@@ -18,7 +18,8 @@ const fetchUsers = () => {
   return fetch(API_ROOT + "user/list", { headers })
 }
 
-export const USER_API = {
+export const API = {
   Url: API_ROOT,
-  ListUsers: fetchUsers,
+  ListUsersUrl: API_ROOT + "user/list",
+  FetchListUsers: fetchUsers,
 }
