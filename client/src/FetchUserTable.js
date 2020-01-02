@@ -8,7 +8,7 @@ import Snackbar from '@material-ui/core/Snackbar';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core/';
 import { API } from './Api';
-import UserTable  from './UserTable';
+import UserTable from './UserTable';
 import UseFetch from './UseFetch'
 
 const useStyles = makeStyles(theme => ({
@@ -36,7 +36,12 @@ export default function FetchUserTable() {
 
   const dataHandler = (data) => {
     console.log(data)
-    setData(data)
+
+    if (data.error){
+      throw data.error
+    }
+
+    setData(data.users)
     setHasFailed(false)
   }
 

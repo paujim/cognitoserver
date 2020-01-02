@@ -4,31 +4,50 @@ import TextField from '@material-ui/core/TextField';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import IconButton from '@material-ui/core/IconButton';
+import { API } from './Api';
 
 export default function FormDialog() {
+
+    const [username, setUsername] = React.useState();
+    const handleChangeUsername = event => {
+        setUsername(event.target.value);
+      };
+
     const [open, setOpen] = React.useState(true);
-    const [showPassword, setShowPassword] = React.useState(false);
     const handleClose = () => {
         setOpen(false);
+        API.FetchGetToken(username, "Edkdkl30$32")
+            .then(resp => { 
+                return resp.json() 
+            })
+            .then(data => {
+                console.log(data)
+                API.SetAccessToken(data.access_token)
+            })
+            .catch(error => {
+                console.log(error)
+            })
+
     };
+    const [showPassword, setShowPassword] = React.useState(false);
+
 
     const handleClickShowPassword = () => {
         setShowPassword(!showPassword);
-      };
+    };
 
     return (
         <Dialog
             maxWidth="xs"
-            open={open} 
+            open={open}
             onClose={handleClose}
-            disableEscapeKeyDown 
+            disableEscapeKeyDown
             disableBackdropClick
             aria-labelledby="form-dialog-title">
             <DialogTitle id="form-dialog-title">Login</DialogTitle>
@@ -40,10 +59,12 @@ export default function FormDialog() {
                     id="username"
                     label="username"
                     type="text"
+                    value={username} 
+                    onChange={handleChangeUsername}
                     fullWidth
                     InputProps={{
                         endAdornment: <InputAdornment position="end"><AccountCircle /></InputAdornment>,
-                      }}
+                    }}
                 />
                 <TextField
                     autoComplete="off"
@@ -53,15 +74,15 @@ export default function FormDialog() {
                     fullWidth
                     InputProps={{
                         endAdornment: <InputAdornment position="end">
-                                        <IconButton
-                                            aria-label="toggle password visibility"
-                                            onClick={handleClickShowPassword}
-                                            edge="end"
-                                        >
-                                        {showPassword ? <Visibility /> : <VisibilityOff />}
-                                        </IconButton>
-                                      </InputAdornment>,
-                      }}
+                            <IconButton
+                                aria-label="toggle password visibility"
+                                onClick={handleClickShowPassword}
+                                edge="end"
+                            >
+                                {showPassword ? <Visibility /> : <VisibilityOff />}
+                            </IconButton>
+                        </InputAdornment>,
+                    }}
                 />
             </DialogContent>
             <DialogActions>

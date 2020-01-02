@@ -46,7 +46,7 @@ func AuthMiddleware(region, userPoolID string) gin.HandlerFunc {
 		token, err := validateToken(tokenString, region, userPoolID, jwk)
 		if err != nil || !token.Valid {
 			// Token is not valid
-			fmt.Printf("token is not valid\n%v", err)
+			fmt.Printf("token is not valid [%v]\n", err)
 			c.AbortWithStatusJSON(401, gin.H{"error": "invalid_token"})
 		} else {
 			// All Good :)

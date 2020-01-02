@@ -35,7 +35,7 @@ func registerUser(c *gin.Context) {
 func listUsers(c *gin.Context) {
 	users, err := cognito.ListUsers()
 	if err == nil {
-		c.JSON(http.StatusAccepted, users)
+		c.JSON(http.StatusOK, gin.H{"users": users})
 		return
 	}
 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
