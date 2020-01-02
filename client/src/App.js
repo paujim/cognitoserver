@@ -3,8 +3,9 @@ import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import Link from '@material-ui/core/Link';
 import NavBar from './NavBar';
-import UserTable from './UserTable'
-import { API } from './Api';
+import FetchUserTable from './FetchUserTable'
+import { API }   from './Api';
+import LoginDialog from './LoginDialog'
 
 function Copyright() {
   return (
@@ -24,7 +25,8 @@ export default function App() {
       <NavBar>
       </NavBar>
       <Container>
-        <UserTable />
+        <FetchUserTable />
+        <LoginDialog />
       </Container>
       <Copyright />
     </div>

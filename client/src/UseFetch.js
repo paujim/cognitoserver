@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function useFetch(fetchFunction, dataHandler, errorHandler) {
+export default function UseFetch(fetchFunction, dataHandler, errorHandler) {
     const [isFetching, setIsFetching] = React.useState(false);
 
     React.useEffect(() => {
