@@ -1,4 +1,4 @@
-import Cookies from 'js-cookie'
+import {LoginManager} from './LoginManager'
 
 let backendHost;
 const hostname = window && window.location && window.location.hostname;
@@ -17,8 +17,8 @@ const API_ROOT = `${backendHost}/api/`
 const API_LIST_USERS = API_ROOT + "user/list"
 const API_GET_TOKEN = API_ROOT + "token"
 
-const fetchUsers = () => {
-  let access_token = getAccessToken()
+const FetchListUsers = () => {
+  let access_token = LoginManager.GetToken()
   return fetch(API_LIST_USERS, {
     method: "GET",
     headers: {
@@ -28,7 +28,7 @@ const fetchUsers = () => {
   })
 }
 
-const getToken = (username, password) => {
+const FetchGetToken = (username, password) => {
   let formData = new URLSearchParams();
   formData.append("username", username)
   formData.append("password", password)
@@ -41,26 +41,12 @@ const getToken = (username, password) => {
   })
 }
 
-const getAccessToken = () => {
-  const access_token = Cookies.get('__access_token')
-  return access_token
-}
-
-const setAccessToken = (access_token) => {
-  Cookies.set('__access_token', access_token, { expires: 7 })
-}
-
-const removeAccessToken = () => {
-  Cookies.remove('__access_token')
-}
 
 export const API = {
   Url: API_ROOT,
   ListUsersUrl: API_LIST_USERS,
-  FetchListUsers: fetchUsers,
+  FetchListUsers,
   GetTokenUrl: API_GET_TOKEN,
-  FetchGetToken: getToken,
-  GetAccessToken : getAccessToken,
-  SetAccessToken: setAccessToken,
+  FetchGetToken,
 }
 

@@ -61,7 +61,7 @@ export default function FetchUserTable() {
     setHasFailed(false);
   };
 
-  let progress = isPending ? <div className={classes.circular}><CircularProgress /></div> : <div></div>;
+  let progress = isPending ? <div className={classes.circular}><CircularProgress /></div> : null;
 
   return (
     <Card>

@@ -11,6 +11,7 @@ import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import IconButton from '@material-ui/core/IconButton';
 import { API } from './Api';
+import {LoginManager} from './LoginManager'
 
 export default function FormDialog() {
 
@@ -19,25 +20,31 @@ export default function FormDialog() {
         setUsername(event.target.value);
       };
 
+    const [password, setPassword] = React.useState();
+    const handleChangePassword = event => {
+        setPassword(event.target.value);
+      };
+
     const [open, setOpen] = React.useState(true);
     const handleClose = () => {
         setOpen(false);
-        API.FetchGetToken(username, "Edkdkl30$32")
+    };
+    const handleGetToken = () => {
+        setOpen(false);
+        API.FetchGetToken(username, password)
             .then(resp => { 
                 return resp.json() 
             })
             .then(data => {
                 console.log(data)
-                API.SetAccessToken(data.access_token)
+                LoginManager.SetToken(data.access_token)
             })
             .catch(error => {
                 console.log(error)
             })
-
     };
+
     const [showPassword, setShowPassword] = React.useState(false);
-
-
     const handleClickShowPassword = () => {
         setShowPassword(!showPassword);
     };
@@ -71,6 +78,8 @@ export default function FormDialog() {
                     id="password"
                     label="password"
                     type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={handleChangePassword}
                     fullWidth
                     InputProps={{
                         endAdornment: <InputAdornment position="end">
@@ -86,7 +95,10 @@ export default function FormDialog() {
                 />
             </DialogContent>
             <DialogActions>
-                <Button onClick={handleClose} color="primary">
+                <Button onClick={handleClose} color="secondary">
+                    Cancel
+                </Button>
+                <Button onClick={handleGetToken} color="primary">
                     Get Token
                 </Button>
             </DialogActions>

@@ -22,11 +22,9 @@ function Copyright() {
 export default function App() {
   return (
     <div>
-      <NavBar>
-      </NavBar>
+      <NavBar />
       <Container>
         <FetchUserTable />
-        <LoginDialog />
       </Container>
       <Copyright />
     </div>
