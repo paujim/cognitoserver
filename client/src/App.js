@@ -5,7 +5,6 @@ import Link from '@material-ui/core/Link';
 import NavBar from './NavBar';
 import FetchUserTable from './FetchUserTable'
 import { API }   from './Api';
-import LoginDialog from './LoginDialog'
 
 function Copyright() {
   return (

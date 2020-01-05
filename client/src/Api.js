@@ -1,19 +1,10 @@
-import {LoginManager} from './LoginManager'
+import { LoginManager } from './LoginManager'
 
-let backendHost;
 const hostname = window && window.location && window.location.hostname;
+let backendHost = process.env.APP_BACKEND_HOST || `http://${hostname}`;
+let backendPort = process.env.APP_BACKEND_PORT || '5000';
 
-if (hostname === 'dev.realsite.com') {
-  backendHost = 'https://dev.realsite.com';
-} else if (hostname === 'staging.realsite.com') {
-  backendHost = 'https://staging.realsite.com';
-} else if (/^qa/.test(hostname)) {
-  backendHost = `https://api.${hostname}`;
-} else {
-  backendHost = process.env.REACT_APP_BACKEND_HOST || 'http://localhost:5000';
-}
-
-const API_ROOT = `${backendHost}/api/`
+const API_ROOT = `${backendHost}:${backendPort}/api/`
 const API_LIST_USERS = API_ROOT + "user/list"
 const API_GET_TOKEN = API_ROOT + "token"
 
@@ -40,7 +31,6 @@ const FetchGetToken = (username, password) => {
     body: formData.toString(),
   })
 }
-
 
 export const API = {
   Url: API_ROOT,

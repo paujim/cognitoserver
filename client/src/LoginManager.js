@@ -2,12 +2,13 @@ import Cookies from 'js-cookie'
 
 const TOKEN_KEY = '__access_token'
 
-const IsLogin = () => { 
+const IsLoggedIn = () => { 
     const access_token = Cookies.get(TOKEN_KEY)
     console.log("access_token:")
     console.log(access_token)
-    if (access_token === undefined || access_token === "")
+    if (access_token === undefined || access_token === ""){
         return false
+    }
     return true 
 }
 
@@ -25,7 +26,7 @@ const GetToken = () => {
   }
 
 export const LoginManager = {
-    IsLogin,
+    IsLoggedIn,
     LogOut,
     SetToken,
     GetToken,

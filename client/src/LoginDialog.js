@@ -11,29 +11,27 @@ import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import IconButton from '@material-ui/core/IconButton';
 import { API } from './Api';
-import {LoginManager} from './LoginManager'
+import { LoginManager } from './LoginManager'
 
-export default function FormDialog() {
+export default function FormDialog(props) {
 
     const [username, setUsername] = React.useState();
     const handleChangeUsername = event => {
         setUsername(event.target.value);
-      };
+    };
 
     const [password, setPassword] = React.useState();
     const handleChangePassword = event => {
         setPassword(event.target.value);
-      };
+    };
 
-    const [open, setOpen] = React.useState(true);
     const handleClose = () => {
-        setOpen(false);
+        props.onClose();
     };
     const handleGetToken = () => {
-        setOpen(false);
         API.FetchGetToken(username, password)
-            .then(resp => { 
-                return resp.json() 
+            .then(resp => {
+                return resp.json()
             })
             .then(data => {
                 console.log(data)
@@ -42,6 +40,10 @@ export default function FormDialog() {
             .catch(error => {
                 console.log(error)
             })
+            .finally(() => {
+                props.onGetToken()
+            })
+
     };
 
     const [showPassword, setShowPassword] = React.useState(false);
@@ -52,8 +54,8 @@ export default function FormDialog() {
     return (
         <Dialog
             maxWidth="xs"
-            open={open}
-            onClose={handleClose}
+            open={props.open}
+            // onClose={handleClose}
             disableEscapeKeyDown
             disableBackdropClick
             aria-labelledby="form-dialog-title">
@@ -66,7 +68,7 @@ export default function FormDialog() {
                     id="username"
                     label="username"
                     type="text"
-                    value={username} 
+                    value={username}
                     onChange={handleChangeUsername}
                     fullWidth
                     InputProps={{

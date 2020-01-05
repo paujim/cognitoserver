@@ -24,22 +24,31 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export default function NavBar(props) {
+export default function NavBar() {
+
+  const [isLoggedIn, setIsLoggedIn] = React.useState(LoginManager.IsLoggedIn());
+
   const classes = useStyles();
-  const [showLogin, setShowLogin] = React.useState(false);
+
+  const handleClose = () => {
+    setOpen(false)
+  }
+  const handleGetToken = ()=> {
+    setOpen(false)
+    setIsLoggedIn(LoginManager.IsLoggedIn())
+  }
+  const [open, setOpen] = React.useState(false);
 
   const handleLogin = () => {
-    if (LoginManager.IsLogin()) {
+   
+    if (LoginManager.IsLoggedIn()) {
       LoginManager.LogOut()
+      setIsLoggedIn(false)
     }
     else {
-      setShowLogin(true);
+      setOpen(true)
     }
   };
-
-
-
-  let login = <LoginDialog />
 
   return (
     <div className={classes.root}>
@@ -49,9 +58,9 @@ export default function NavBar(props) {
           <Typography variant="h6" className={classes.title}>
             Admin
           </Typography>
-          <Button color="inherit" onClick={handleLogin} >{LoginManager.IsLogin() ? "Logout" : "Login"}</Button>
+          <Button color="inherit" onClick={handleLogin} >{isLoggedIn ? "Logout" : "Login"}</Button>
         </Toolbar>
-        {showLogin ? login : null}
+        <LoginDialog open={open} onClose={handleClose} onGetToken={handleGetToken}/>
       </AppBar>
     </div>
   );
