@@ -7,9 +7,9 @@ import { Card, CardContent, CardActions } from '@material-ui/core/';
 import Snackbar from '@material-ui/core/Snackbar';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core/';
-import { API } from '../utils/Api';
 import UserTable from './UserTable';
-import UseFetch from '../utils/UseFetch'
+import FetchUsers from '../utils/FetchUsers'
+import { LoginManager } from '../utils/LoginManager';
 
 const useStyles = makeStyles(theme => ({
   circular: {
@@ -23,7 +23,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export default function FetchUserTable() {
+export default function FetchUserTable(props) {
   const classes = useStyles();
 
   const [openDialog, setOpenDialog] = React.useState(false);
@@ -34,25 +34,20 @@ export default function FetchUserTable() {
     setOpenDialog(false);
   };
 
-  const dataHandler = (data) => {
-    console.log(data)
-
-    if (data.error){
-      throw data.error
-    }
-
-    setData(data.users)
+  const dataHandler = (users) => {
+    console.log(users)
+    setData(users)
     setHasFailed(false)
   }
 
   const errorHandler = (error) => {
     console.log(error)
     setData([])
-    setHasFailed(true)
+    setHasFailed(true & LoginManager.IsLoggedIn())
   }
 
   const [data, setData] = React.useState([]);
-  const isPending = UseFetch(API.FetchListUsers, dataHandler, errorHandler)
+  const isPending = FetchUsers(dataHandler, errorHandler, LoginManager.IsLoggedIn())
   const [hasFailed, setHasFailed] = React.useState(false);
   const handleClose = (event, reason) => {
     if (reason === 'clickaway') {
@@ -111,6 +106,5 @@ export default function FetchUserTable() {
       >
       </Snackbar>
     </Card>
-
   );
 }

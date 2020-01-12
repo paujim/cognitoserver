@@ -6,8 +6,9 @@ import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import LoginDialog from './LoginDialog'
 import SecurityRoundedIcon from '@material-ui/icons/SecurityRounded';
-import {LoginManager} from '../utils/LoginManager'
-
+import { LoginManager } from '../utils/LoginManager'
+import Container from '@material-ui/core/Container';
+import FetchUserTable from './FetchUserTable'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -33,14 +34,13 @@ export default function NavBar() {
   const handleClose = () => {
     setOpen(false)
   }
-  const handleGetToken = ()=> {
+  const handleGetToken = () => {
     setOpen(false)
     setIsLoggedIn(LoginManager.IsLoggedIn())
   }
   const [open, setOpen] = React.useState(false);
 
   const handleLogin = () => {
-   
     if (LoginManager.IsLoggedIn()) {
       LoginManager.LogOut()
       setIsLoggedIn(false)
@@ -60,8 +60,11 @@ export default function NavBar() {
           </Typography>
           <Button color="inherit" onClick={handleLogin} >{isLoggedIn ? "Logout" : "Login"}</Button>
         </Toolbar>
-        <LoginDialog open={open} onClose={handleClose} onGetToken={handleGetToken}/>
+        <LoginDialog open={open} onClose={handleClose} onGetToken={handleGetToken} />
       </AppBar>
+      <Container>
+        <FetchUserTable />
+      </Container>
     </div>
   );
 }
