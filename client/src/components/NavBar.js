@@ -6,7 +6,7 @@ import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import LoginDialog from './LoginDialog'
 import SecurityRoundedIcon from '@material-ui/icons/SecurityRounded';
-import {LoginManager} from './LoginManager'
+import {LoginManager} from '../utils/LoginManager'
 
 
 const useStyles = makeStyles(theme => ({

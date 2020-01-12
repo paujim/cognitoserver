@@ -7,9 +7,9 @@ import { Card, CardContent, CardActions } from '@material-ui/core/';
 import Snackbar from '@material-ui/core/Snackbar';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core/';
-import { API } from './Api';
+import { API } from '../utils/Api';
 import UserTable from './UserTable';
-import UseFetch from './UseFetch'
+import UseFetch from '../utils/UseFetch'
 
 const useStyles = makeStyles(theme => ({
   circular: {

@@ -2,9 +2,9 @@ import React from 'react';
 import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import Link from '@material-ui/core/Link';
-import NavBar from './NavBar';
-import FetchUserTable from './FetchUserTable'
-import { API }   from './Api';
+import NavBar from './components/NavBar';
+import FetchUserTable from './components/FetchUserTable'
+import { API }   from './utils/Api';
 
 function Copyright() {
   return (

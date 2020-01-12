@@ -10,8 +10,8 @@ import AccountCircle from '@material-ui/icons/AccountCircle';
 import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import IconButton from '@material-ui/core/IconButton';
-import { API } from './Api';
-import { LoginManager } from './LoginManager'
+import { API } from '../utils/Api';
+import { LoginManager } from '../utils/LoginManager'
 
 export default function FormDialog(props) {
 
