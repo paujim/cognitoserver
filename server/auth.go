@@ -45,8 +45,6 @@ func AuthMiddleware(region, userPoolID string) gin.HandlerFunc {
 
 		token, err := validateToken(tokenString, region, userPoolID, jwk)
 		if err != nil || !token.Valid {
-			// Token is not valid
-			fmt.Printf("token is not valid [%v]\n", err)
 			c.AbortWithStatusJSON(401, gin.H{"error": "invalid_token"})
 		} else {
 			// All Good :)
@@ -162,9 +160,6 @@ func convertKey(rawE, rawN string) *rsa.PublicKey {
 		panic(err)
 	}
 	pubKey.N.SetBytes(decodedN)
-	// fmt.Println(decodedN)
-	// fmt.Println(decodedE)
-	// fmt.Printf("%#v\n", *pubKey)
 	return pubKey
 }
 
@@ -220,8 +215,6 @@ func validateExpired(claims jwt.MapClaims) error {
 	if tokenExp, ok := claims["exp"]; ok {
 		if exp, ok := tokenExp.(float64); ok {
 			now := time.Now().Unix()
-			// fmt.Printf("current unixtime : %v\n", now)
-			// fmt.Printf("expire unixtime  : %v\n", int64(exp))
 			if int64(exp) > now {
 				return nil
 			}
@@ -251,7 +244,6 @@ func getAccessToken(c *gin.Context) {
 		})
 		return
 	}
-	fmt.Println(*accessToken)
 	c.JSON(http.StatusOK, gin.H{
 		"token_type":    "bearer",
 		"access_token":  accessToken,

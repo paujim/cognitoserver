@@ -9,8 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 )
 
-// import "github.com/aws/aws-sdk-go/service/ssm/ssmiface"
-
 //ParamStore ...
 type ParamStore struct {
 	client ssmiface.SSMAPI
@@ -29,7 +27,7 @@ func NewParamStore(region string, logger ILogger) *ParamStore {
 
 //Get ...
 func (p *ParamStore) Get(key string) (string, error) {
-	p.logger.Logf("Get [%v]\n", key)
+	p.logger.Logf("Geting parameter [%v]\n", key)
 	withDecryption := false
 	input := &ssm.GetParameterInput{
 		Name:           aws.String(key),
