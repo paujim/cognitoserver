@@ -1,45 +1,45 @@
-package main
+package services
 
 import (
 	"errors"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider/cognitoidentityprovideriface"
-	"time"
+	"github.com/paujim/cognitoserver/server/pkg/entities"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
-	//ErrorInvalidInputParameters ...
 	ErrorInvalidInputParameters = errors.New("Missing input parameters")
 )
 
-//CognitoParam ...
-type CognitoParam struct {
-	appClientID *string
-	userPoolID  *string
-	client      cognitoidentityprovideriface.CognitoIdentityProviderAPI
-	logger      ILogger
+func init() {
+	log.SetFormatter(&log.JSONFormatter{})
 }
 
-//NewCognitoParam ...
-func NewCognitoParam(region, appClientID, userPoolID string, client cognitoidentityprovideriface.CognitoIdentityProviderAPI, logger ILogger) *CognitoParam {
-	return &CognitoParam{
+type cognitoHandler struct {
+	appClientID *string
+	userPoolID  *string
+	cognitoAPI  cognitoidentityprovideriface.CognitoIdentityProviderAPI
+}
+
+func NewCognitoHandler(appClientID, userPoolID string, client cognitoidentityprovideriface.CognitoIdentityProviderAPI) entities.UserTokenHandler {
+	return &cognitoHandler{
 		appClientID: aws.String(appClientID),
 		userPoolID:  aws.String(userPoolID),
-		client:      client,
-		logger:      logger,
+		cognitoAPI:  client,
 	}
 }
 
-//GetTokens ...
-func (c *CognitoParam) GetTokens(username, password *string) (accessToken, refreshToken *string, err error) {
+func (c *cognitoHandler) GetTokens(username, password *string) (accessToken, refreshToken *string, err error) {
 
 	if username == nil || password == nil {
 		err = ErrorInvalidInputParameters
 		return
 	}
 
-	c.logger.Logln("Getting access token")
+	log.Info("Getting access token")
 	params := &cognitoidentityprovider.InitiateAuthInput{
 		AuthFlow: aws.String("USER_PASSWORD_AUTH"),
 		ClientId: c.appClientID,
@@ -48,12 +48,12 @@ func (c *CognitoParam) GetTokens(username, password *string) (accessToken, refre
 			"PASSWORD": password,
 		},
 	}
-	req, resp := c.client.InitiateAuthRequest(params)
+	req, resp := c.cognitoAPI.InitiateAuthRequest(params)
 	err = req.Send()
 	if err != nil {
 		return
 	}
-	c.logger.Logln("\n" + resp.GoString())
+	log.Info(resp.GoString())
 
 	// Ok
 	if resp.ChallengeName == nil {
@@ -63,15 +63,15 @@ func (c *CognitoParam) GetTokens(username, password *string) (accessToken, refre
 	}
 	// NEW_PASSWORD_REQUIRED Challenge
 	if *resp.ChallengeName == "NEW_PASSWORD_REQUIRED" {
-		return responseToNewPassword(c, resp.Session, username, password)
+		return c.responseToNewPassword(resp.Session, username, password)
 	}
 	// Others
 	err = errors.New("Unable to respond: " + *resp.ChallengeName)
 	return
 }
 
-func responseToNewPassword(c *CognitoParam, session, username, password *string) (accessToken, refreshToken *string, err error) {
-	c.logger.Logln("New password required. Responding chanllenge with old password")
+func (c *cognitoHandler) responseToNewPassword(session, username, password *string) (accessToken, refreshToken *string, err error) {
+	log.Infoln("New password required. Responding chanllenge with old password")
 	params := &cognitoidentityprovider.RespondToAuthChallengeInput{
 		Session:       session,
 		ChallengeName: aws.String("NEW_PASSWORD_REQUIRED"),
@@ -81,7 +81,7 @@ func responseToNewPassword(c *CognitoParam, session, username, password *string)
 			"NEW_PASSWORD": password,
 		},
 	}
-	req, resp := c.client.RespondToAuthChallengeRequest(params)
+	req, resp := c.cognitoAPI.RespondToAuthChallengeRequest(params)
 	err = req.Send()
 	if err != nil {
 		return
@@ -92,21 +92,20 @@ func responseToNewPassword(c *CognitoParam, session, username, password *string)
 		return
 	}
 
-	c.logger.Logln("\n" + resp.GoString())
+	log.Info(resp.GoString())
 	accessToken = resp.AuthenticationResult.AccessToken
 	refreshToken = resp.AuthenticationResult.RefreshToken
 	return
 }
 
-//RefreshAccessToken ...
-func (c *CognitoParam) RefreshAccessToken(token *string) (accessToken, refreshToken *string, err error) {
+func (c *cognitoHandler) RefreshAccessToken(token *string) (accessToken, refreshToken *string, err error) {
 
 	if token == nil {
 		err = ErrorInvalidInputParameters
 		return
 	}
 
-	c.logger.Logln("Refreshing token")
+	log.Info("Refreshing token")
 	params := &cognitoidentityprovider.InitiateAuthInput{
 		AuthFlow: aws.String("REFRESH_TOKEN_AUTH"),
 		ClientId: c.appClientID,
@@ -114,12 +113,12 @@ func (c *CognitoParam) RefreshAccessToken(token *string) (accessToken, refreshTo
 			"REFRESH_TOKEN": token,
 		},
 	}
-	req, resp := c.client.InitiateAuthRequest(params)
+	req, resp := c.cognitoAPI.InitiateAuthRequest(params)
 	err = req.Send()
 	if err != nil {
 		return
 	}
-	c.logger.Logln("\n" + resp.GoString())
+	log.Info(resp.GoString())
 	if resp.AuthenticationResult == nil {
 		err = errors.New("Unable to get AccessToken")
 		return
@@ -129,55 +128,44 @@ func (c *CognitoParam) RefreshAccessToken(token *string) (accessToken, refreshTo
 	return
 }
 
-//RegisterUser ...
-func (c *CognitoParam) RegisterUser(username, password *string) (sub *string, err error) {
-	c.logger.Logln("Registering new user")
+func (c *cognitoHandler) RegisterUser(username, password *string) (sub *string, err error) {
+	log.Info("Registering new user")
 	params := &cognitoidentityprovider.SignUpInput{
 		ClientId: c.appClientID,
 		Password: password,
 		Username: username,
 	}
-	req, resp := c.client.SignUpRequest(params)
+	req, resp := c.cognitoAPI.SignUpRequest(params)
 	err = req.Send()
 	if err != nil {
 		return
 	}
-	c.logger.Logln("\n" + resp.GoString())
+	log.Info(resp.GoString())
 	sub = resp.UserSub
 	return
 }
 
-//UserModel ...
-type UserModel struct {
-	Username *string    `json:"username"`
-	Status   *string    `json:"status"`
-	Enabled  *bool      `json:"enabled"`
-	Created  *time.Time `json:"created"`
-}
-
-//ListUsers ...
-func (c *CognitoParam) ListUsers() (users []UserModel, err error) {
-	c.logger.Logln("Getting all users")
+func (c *cognitoHandler) ListUsers() (users []entities.UserModel, err error) {
+	log.Info("Getting all users")
 	params := &cognitoidentityprovider.ListUsersInput{
 		UserPoolId: c.userPoolID,
 	}
 
-	req, resp := c.client.ListUsersRequest(params)
+	req, resp := c.cognitoAPI.ListUsersRequest(params)
 	err = req.Send()
 	if err != nil {
 		return
 	}
-	c.logger.Logln("\n" + resp.GoString())
+	log.Info(resp.GoString())
 
-	users = []UserModel{}
+	users = []entities.UserModel{}
 	for _, user := range resp.Users {
-		users = append(users, UserModel{
+		users = append(users, entities.UserModel{
 			Username: user.Username,
 			Status:   user.UserStatus,
 			Enabled:  user.Enabled,
 			Created:  user.UserCreateDate,
 		})
 	}
-
 	return
 }

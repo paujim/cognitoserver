@@ -1,12 +1,13 @@
-package main
+package services
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider/cognitoidentityprovideriface"
-	"testing"
 )
 
 // mocks
@@ -36,15 +37,12 @@ func TestGetTokens(t *testing.T) {
 		RefreshToken: aws.String("REFRESH_TOKEN"),
 	}
 	expectedError := errors.New("Something went wrong")
-	logger := NewAPILogger("[TEST] ")
 
 	t.Run("Missing parameters on GetTokens", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{},
-			logger,
 		)
 		_, _, err := cp.GetTokens(nil, nil)
 		if err != ErrorInvalidInputParameters {
@@ -52,8 +50,7 @@ func TestGetTokens(t *testing.T) {
 		}
 	})
 	t.Run("Successfull GetTokens", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{
@@ -62,7 +59,6 @@ func TestGetTokens(t *testing.T) {
 					AuthenticationResult: authResult,
 				},
 			},
-			logger,
 		)
 		accessToken, refreshToken, err := cp.GetTokens(aws.String("username"), aws.String("password"))
 		if err != nil {
@@ -76,15 +72,13 @@ func TestGetTokens(t *testing.T) {
 		}
 	})
 	t.Run("Fail GetTokens", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{
 				initiateAuthRequest: &request.Request{Error: expectedError},
 				initiateAuthOutput:  nil,
 			},
-			logger,
 		)
 		_, _, err := cp.GetTokens(aws.String("username"), aws.String("password"))
 
@@ -93,8 +87,7 @@ func TestGetTokens(t *testing.T) {
 		}
 	})
 	t.Run("Successfull GetTokens with NEW_PASSWORD_REQUIRED", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{
@@ -107,7 +100,6 @@ func TestGetTokens(t *testing.T) {
 					AuthenticationResult: authResult,
 				},
 			},
-			logger,
 		)
 		accessToken, refreshToken, err := cp.GetTokens(aws.String("username"), aws.String("password"))
 		if err != nil {
@@ -121,8 +113,7 @@ func TestGetTokens(t *testing.T) {
 		}
 	})
 	t.Run("Fail GetTokens with NEW_PASSWORD_REQUIRED", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{
@@ -132,7 +123,6 @@ func TestGetTokens(t *testing.T) {
 				},
 				respondToAuthChallengeRequest: &request.Request{Error: expectedError},
 			},
-			logger,
 		)
 		_, _, err := cp.GetTokens(aws.String("username"), aws.String("password"))
 		if err != expectedError {
@@ -140,8 +130,7 @@ func TestGetTokens(t *testing.T) {
 		}
 	})
 	t.Run("Fail GetTokens with OTHER challenge", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{
@@ -151,7 +140,6 @@ func TestGetTokens(t *testing.T) {
 					AuthenticationResult: authResult,
 				},
 			},
-			logger,
 		)
 		_, _, err := cp.GetTokens(aws.String("username"), aws.String("password"))
 		if err == nil {
@@ -165,14 +153,11 @@ func TestRefreshAccessToken(t *testing.T) {
 		AccessToken: aws.String("ACCESS_TOKEN"),
 	}
 	expectedError := errors.New("Something went wrong")
-	logger := NewAPILogger("[TEST] ")
 	t.Run("Missing parameters on RefreshAccessToken", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{},
-			logger,
 		)
 		_, _, err := cp.RefreshAccessToken(nil)
 		if err != ErrorInvalidInputParameters {
@@ -180,8 +165,7 @@ func TestRefreshAccessToken(t *testing.T) {
 		}
 	})
 	t.Run("Successfull RefreshAccessToken", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{
@@ -190,7 +174,6 @@ func TestRefreshAccessToken(t *testing.T) {
 					AuthenticationResult: authResult,
 				},
 			},
-			logger,
 		)
 		accessToken, refreshToken, err := cp.RefreshAccessToken(aws.String("refresh_token"))
 		if err != nil {
@@ -204,8 +187,7 @@ func TestRefreshAccessToken(t *testing.T) {
 		}
 	})
 	t.Run("Fail RefreshAccessToken with OTHER challenge", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{
@@ -214,7 +196,6 @@ func TestRefreshAccessToken(t *testing.T) {
 					ChallengeName: aws.String("OTHER"),
 				},
 			},
-			logger,
 		)
 		_, _, err := cp.RefreshAccessToken(aws.String("refresh_token"))
 		if err == nil {
@@ -222,14 +203,12 @@ func TestRefreshAccessToken(t *testing.T) {
 		}
 	})
 	t.Run("Fail RefreshAccessToken", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{
 				initiateAuthRequest: &request.Request{Error: expectedError},
 			},
-			logger,
 		)
 		_, _, err := cp.RefreshAccessToken(aws.String("refresh_token"))
 
@@ -241,23 +220,20 @@ func TestRefreshAccessToken(t *testing.T) {
 
 func TestListUsers(t *testing.T) {
 	expectedError := errors.New("Something went wrong")
-	logger := NewAPILogger("[TEST] ")
 	t.Run("Successfull ListUsers with three users", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{
 				listUsersRequest: &request.Request{},
 				listUsersRequestOutput: &cognitoidentityprovider.ListUsersOutput{
 					Users: []*cognitoidentityprovider.UserType{
-						&cognitoidentityprovider.UserType{Username: aws.String("username_1")},
-						&cognitoidentityprovider.UserType{Username: aws.String("username_2")},
-						&cognitoidentityprovider.UserType{Username: aws.String("username_3")},
+						{Username: aws.String("username_1")},
+						{Username: aws.String("username_2")},
+						{Username: aws.String("username_3")},
 					},
 				},
 			},
-			logger,
 		)
 		users, err := cp.ListUsers()
 		if err != nil {
@@ -268,8 +244,7 @@ func TestListUsers(t *testing.T) {
 		}
 	})
 	t.Run("Successfull ListUsers with nil users", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{
@@ -278,7 +253,6 @@ func TestListUsers(t *testing.T) {
 					Users: nil,
 				},
 			},
-			logger,
 		)
 		users, err := cp.ListUsers()
 		if err != nil {
@@ -289,14 +263,12 @@ func TestListUsers(t *testing.T) {
 		}
 	})
 	t.Run("Fail ListUsers", func(t *testing.T) {
-		cp := NewCognitoParam(
-			"region",
+		cp := NewCognitoHandler(
 			"client",
 			"userpool",
 			&mockedCognitoClient{
 				listUsersRequest: &request.Request{Error: expectedError},
 			},
-			logger,
 		)
 		_, err := cp.ListUsers()
 

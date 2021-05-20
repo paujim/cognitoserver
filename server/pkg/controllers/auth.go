@@ -1,4 +1,4 @@
-package main
+package controllers
 
 import (
 	"crypto/rsa"
@@ -7,43 +7,50 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
 	"log"
 	"math/big"
 	"net/http"
 	"strings"
 	"time"
+
+	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
+	"github.com/paujim/cognitoserver/server/pkg/entities"
 )
 
-//TokenRequest ...
-type TokenRequest struct {
-	Username     *string `form:"username"`
-	Password     *string `form:"password"`
-	RefreshToken *string `form:"refresh_token"`
+type auth struct {
+	userPoolRegion string
+	userPoolID     string
+	service        entities.TokenHandler
 }
 
-//RegisterAuthRoutes ...
-func RegisterAuthRoutes(router *gin.RouterGroup) {
-	router.POST("/token", getAccessToken)
+func NewAuth(region, userPoolID string, service entities.TokenHandler) *auth {
+	return &auth{
+		userPoolRegion: region,
+		userPoolID:     userPoolID,
+		service:        service,
+	}
 }
 
-//AuthMiddleware ...
-func AuthMiddleware(region, userPoolID string) gin.HandlerFunc {
+func (a *auth) RegisterAuthRoutes(router *gin.RouterGroup) {
+	router.POST("/token", a.getAccessToken)
+}
+
+func (a *auth) AuthMiddleware() gin.HandlerFunc {
 	//Download and store the JSON Web Key (JWK) for your user pool.
-	jwkURL := fmt.Sprintf("https://cognito-idp.%v.amazonaws.com/%v/.well-known/jwks.json", region, userPoolID)
+	jwkURL := fmt.Sprintf("https://cognito-idp.%v.amazonaws.com/%v/.well-known/jwks.json", a.userPoolRegion, a.userPoolID)
 	log.Println(jwkURL)
-	jwk := getJWK(jwkURL)
+	jwk := a.getJWK(jwkURL)
 
 	return func(c *gin.Context) {
-		tokenString, ok := getBearer(c.Request.Header["Authorization"])
+		tokenString, ok := a.getBearer(c.Request.Header["Authorization"])
 		if !ok {
 			// Authorization Bearer Header is missing
 			c.AbortWithStatusJSON(401, gin.H{"error": "missing_authorization_header"})
 			return
 		}
 
-		token, err := validateToken(tokenString, region, userPoolID, jwk)
+		token, err := a.validateToken(tokenString, jwk)
 		if err != nil || !token.Valid {
 			c.AbortWithStatusJSON(401, gin.H{"error": "invalid_token"})
 		} else {
@@ -63,7 +70,7 @@ type jwkKey struct {
 	Use string
 }
 
-func getJWK(jwkURL string) map[string]jwkKey {
+func (a *auth) getJWK(jwkURL string) map[string]jwkKey {
 	type JWK struct {
 		Keys []jwkKey
 	}
@@ -89,7 +96,7 @@ func getJWK(jwkURL string) map[string]jwkKey {
 	return jwkMap
 }
 
-func getBearer(auth []string) (jwt string, ok bool) {
+func (a *auth) getBearer(auth []string) (jwt string, ok bool) {
 	for _, v := range auth {
 		ret := strings.Split(v, " ")
 		if len(ret) > 1 && ret[0] == "Bearer" {
@@ -99,7 +106,7 @@ func getBearer(auth []string) (jwt string, ok bool) {
 	return "", false
 }
 
-func validateToken(tokenStr, region, userPoolID string, jwk map[string]jwkKey) (*jwt.Token, error) {
+func (a *auth) validateToken(tokenStr string, jwk map[string]jwkKey) (*jwt.Token, error) {
 
 	//Decode the token string into JWT format.
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
@@ -114,7 +121,7 @@ func validateToken(tokenStr, region, userPoolID string, jwk map[string]jwkKey) (
 			if kidStr, ok := kid.(string); ok {
 				key := jwk[kidStr]
 				// Verify the signature of the decoded JWT token.
-				rsaPublicKey := convertKey(key.E, key.N)
+				rsaPublicKey := publicKey(key.E, key.N)
 				return rsaPublicKey, nil
 			}
 		}
@@ -134,14 +141,29 @@ func validateToken(tokenStr, region, userPoolID string, jwk map[string]jwkKey) (
 		return nil, fmt.Errorf("token does not contain issuer")
 	}
 
-	err = validateAWSJwtClaims(claims, region, userPoolID)
+	// Check the iss claim. It should match your user pool.
+	issShoudBe := fmt.Sprintf("https://cognito-idp.%v.amazonaws.com/%v", a.userPoolRegion, a.userPoolID)
+	err = a.validateClaimItem("iss", []string{issShoudBe}, claims)
 	if err != nil {
 		return nil, err
 	}
+
+	// Check the token_use claim.
+	err = a.validateTokenUse(claims)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check the exp claim and make sure the token is not expired.
+	err = a.validateExpired(claims)
+	if err != nil {
+		return nil, err
+	}
+
 	return token, nil
 }
 
-func convertKey(rawE, rawN string) *rsa.PublicKey {
+func publicKey(rawE, rawN string) *rsa.PublicKey {
 	decodedE, err := base64.RawURLEncoding.DecodeString(rawE)
 	if err != nil {
 		panic(err)
@@ -163,42 +185,18 @@ func convertKey(rawE, rawN string) *rsa.PublicKey {
 	return pubKey
 }
 
-func validateAWSJwtClaims(claims jwt.MapClaims, region, userPoolID string) error {
-	var err error
-	// Check the iss claim. It should match your user pool.
-	issShoudBe := fmt.Sprintf("https://cognito-idp.%v.amazonaws.com/%v", region, userPoolID)
-	err = validateClaimItem("iss", []string{issShoudBe}, claims)
-	if err != nil {
-		return err
-	}
-
-	// Check the token_use claim.
-	validateTokenUse := func() error {
-		if tokenUse, ok := claims["token_use"]; ok {
-			if tokenUseStr, ok := tokenUse.(string); ok {
-				if tokenUseStr == "access" {
-					return nil
-				}
+func (a *auth) validateTokenUse(claims jwt.MapClaims) error {
+	if tokenUse, ok := claims["token_use"]; ok {
+		if tokenUseStr, ok := tokenUse.(string); ok {
+			if tokenUseStr == "access" {
+				return nil
 			}
 		}
-		return errors.New("token_use should be access")
 	}
-
-	err = validateTokenUse()
-	if err != nil {
-		return err
-	}
-
-	// Check the exp claim and make sure the token is not expired.
-	err = validateExpired(claims)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return errors.New("token_use should be access")
 }
 
-func validateClaimItem(key string, keyShouldBe []string, claims jwt.MapClaims) error {
+func (a *auth) validateClaimItem(key string, keyShouldBe []string, claims jwt.MapClaims) error {
 	if val, ok := claims[key]; ok {
 		if valStr, ok := val.(string); ok {
 			for _, shouldbe := range keyShouldBe {
@@ -211,7 +209,7 @@ func validateClaimItem(key string, keyShouldBe []string, claims jwt.MapClaims) e
 	return fmt.Errorf("%v does not match any of valid values: %v", key, keyShouldBe)
 }
 
-func validateExpired(claims jwt.MapClaims) error {
+func (a *auth) validateExpired(claims jwt.MapClaims) error {
 	if tokenExp, ok := claims["exp"]; ok {
 		if exp, ok := tokenExp.(float64); ok {
 			now := time.Now().Unix()
@@ -224,17 +222,17 @@ func validateExpired(claims jwt.MapClaims) error {
 	return errors.New("token is expired")
 }
 
-func getAccessToken(c *gin.Context) {
-	var request TokenRequest
+func (a *auth) getAccessToken(c *gin.Context) {
+	var request entities.TokenRequest
 	c.ShouldBind(&request)
 
 	var accessToken, refreshToken *string
 	var err error
 
 	if request.RefreshToken == nil {
-		accessToken, refreshToken, err = cognito.GetTokens(request.Username, request.Password)
+		accessToken, refreshToken, err = a.service.GetTokens(request.Username, request.Password)
 	} else {
-		accessToken, refreshToken, err = cognito.RefreshAccessToken(request.RefreshToken)
+		accessToken, refreshToken, err = a.service.RefreshAccessToken(request.RefreshToken)
 	}
 
 	if err != nil {

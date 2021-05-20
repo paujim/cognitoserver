@@ -1,8 +1,9 @@
-package main
+package controllers
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 //RegisterPing ...
